@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # This is to convert time code markers from a .txt file generated from FCP.
-# It is currently set up for one use case, but is evolving to be able to 
+# It is currently set up for one use case, but is evolving to be able to
 # dynamically do all steps on the fly.
 
 # Currently these assumptions are made:
@@ -18,6 +18,7 @@
 #	5) title-400.mp4
 #	6) title-600.mp4
 #	7) title-1200.mp4
+# f) the markers from FCP correspond to the colors in the assignFileName function.
 
 
 #flag for proper handling of division
