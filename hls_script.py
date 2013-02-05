@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/HLSMetaTagScript/env python
 
 # This is to convert time code markers from a .txt file generated from FCP.
 # It is currently set up for one use case, but is evolving to be able to
@@ -20,6 +20,8 @@
 #	7) title-1200.mp4
 # f) the markers from FCP correspond to the colors in the assignFileName function.
 
+# this script should be run from inside the folder where the assets are
+# you can either put this script in that folder OR add the script to your bash $PATH
 
 #flag for proper handling of division
 from __future__ import division
