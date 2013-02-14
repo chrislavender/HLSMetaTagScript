@@ -1,4 +1,4 @@
-#!/usr/bin/HLSMetaTagScript/env python
+#!/usr/bin/env python
 
 # This is to convert time code markers from a .txt file generated from FCP.
 # It is currently set up for one use case, but is evolving to be able to
@@ -33,8 +33,9 @@ import fnmatch
 
 gID3TagsLocation = "/Users/chrislavender/bin/meta_tags/"
 gInputFile = ""
-gMarkersOutputFile = "macrofile.txt"
-gStartsOutputFile = "starts.txt"
+gStreamTitle = ""
+gMacrofile = "macrofile.txt"
+gStartsOutputFile = ""
 gAnswerAnimationTime = 1.0
 # timePerFrame = 1 / ticks per second
 # should be less than the video fps
@@ -90,17 +91,17 @@ else:
 # check for an output file argument
 # if none given use the default
 if (len(sys.argv) > 2):
-    gMarkersOutputFile = sys.argv[2]
+    gStreamTitle = sys.argv[2]
+    gStartsOutputFile = sys.argv[2] + "_starts"
 
 # if none given use the default
 if (len(sys.argv) > 3):
     gStartsOutputFile = sys.argv[3]
-else:
-    gStartsOutputFile = sys.argv[1].split("_")[0] + "_starts.txt"
 
 # create and open the output file
-fout_markers = open(gMarkersOutputFile, "w")
-fout_starts = open(gStartsOutputFile, "w")
+gMacrofile = gStreamTitle + "_macro.txt"
+fout_markers = open(gMacrofile, "w")
+fout_starts = open(gStartsOutputFile + ".txt", "w")
 
 # next add the init tags
 for num in range(1, 11):
@@ -156,6 +157,8 @@ for mp4FileName in glob.glob("*.mp4"):
     if fnmatch.fnmatch(mp4FileName, "*_win*") or fnmatch.fnmatch(mp4FileName, "*_lose*"):
         subprocess.call(["mv", mp4FileName, "_endings/"])
         continue
+    # if this is not an ending video then it's an encoding
+    # save a dictionary of the mp4FileNames keyed by the folderName
     folderName = mp4FileName.split("-")[1].split(".")[0]
     fileNameDict[folderName] = mp4FileName
 
@@ -170,9 +173,9 @@ for folderName, fileName in fileNameDict.iteritems():
     subprocess.call(["mkdir", "_streams/" + folderName])
 
     if fnmatch.fnmatch(folderName, "*_audio"):
-        subprocess.call(["mediafilesegmenter", "-audio-only", "-I", "-f", "_streams/" + folderName, "-M", "macrofile.txt", fileName])
+        subprocess.call(["mediafilesegmenter", "-audio-only", "-I", "-B", gStreamTitle + "_", "-f", "_streams/" + folderName, "-M", gMacrofile, fileName])
     else:
-        subprocess.call(["mediafilesegmenter", "-I", "-f", "_streams/" + folderName, "-M", "macrofile.txt", fileName])
+        subprocess.call(["mediafilesegmenter", "-I", "-B", gStreamTitle + "_", "-f", "_streams/" + folderName, "-M", gMacrofile, fileName])
 
 # create a dictionary for the plist files keyed by folder destination
 plistFileNameDict = {}
