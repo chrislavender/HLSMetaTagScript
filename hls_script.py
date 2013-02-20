@@ -63,7 +63,7 @@ def convertTimeCodeStringToFloat(tc_string):
 
 
 def assignFileName(tag_name):
-#FCP outputs the markers with a color associated
+# FCP outputs the markers with a color associated
 
     if tag_name == "Red":
         fileName = "1.id3"
@@ -116,6 +116,9 @@ count = 0
 # go through each line
 for lyne in fyle:
     txt_elements = lyne.split()
+    #if there are less than 5 elements it's probably a blank line (or something else is up)
+    if len(txt_elements) < 5:
+        continue
 
     time_code = txt_elements[4]
     id3_file = assignFileName(txt_elements[6])
@@ -193,4 +196,3 @@ subprocess.call(["variantplaylistcreator", "-o", "_streams/all.m3u8", "400/prog_
 # clean up
 for plistFileName in glob.glob("*.plist"):
     subprocess.call(["rm", plistFileName])
-
