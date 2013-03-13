@@ -6,9 +6,9 @@
 
 # Currently these assumptions are made:
 # a) you have Apple's HLS command line tools installed
-# b) you have created 7 id3 tags
-# c) the tags are located in a folder called "meta_tags"
-# d) the meta_tags folder location is set correctly via the gID3TagsLocation variable
+# b) you have created 7 id3 tags (future: dynamically determine)
+# c) the tags are located in a folder called "meta_tags" (future: dynamically create id3 tags and destroy when finished)
+# d) the meta_tags folder location is set correctly via the gID3TagsLocation variable (future: will be unneeded)
 # e) the .txt file with the FCP markers is located in the same directory as 7 .mp4 encodings
 #		generated from Compressor with this title structure: aTitle-encoding.mp4
 #	1) title-64_audio.m4a
@@ -18,7 +18,7 @@
 #	5) title-400.mp4
 #	6) title-600.mp4
 #	7) title-1200.mp4
-# f) the markers from FCP correspond to the colors in the assignFileName function.
+# f) the markers from FCP correspond to the colors in the assignFileName function. (future: dynamically determine)
 
 # this script should be run from inside the folder where the assets are
 # you can either put this script in that folder OR add the script to your bash $PATH
@@ -30,6 +30,7 @@ import sys
 import subprocess
 import glob
 import fnmatch
+import os
 
 gID3TagsLocation = "/Users/chrislavender/bin/meta_tags/"
 gInputFile = ""
@@ -144,31 +145,41 @@ for lyne in fyle:
 fout_markers.close()
 fyle.close()
 
-# make some directories for organization
-subprocess.call(["mkdir", "_streams", "_mov", "_endings"])
-
 # organize the mov files
-for movFileName in glob.glob("*.mov"):
-    subprocess.call(["mv", movFileName, "_mov/"])
+movGlob = glob.glob("*.mov")
+if movGlob:
+    if os.path.exists("_mov") is False:
+        subprocess.call(["mkdir", "_mov"])
+    for movFileName in movGlob:
+        subprocess.call(["mv", movFileName, "_mov/"])
 
 # create a dictionary for the mp4 files keyed by folder destination
 fileNameDict = {}
 
 # grab the .mp4 encodings
-for mp4FileName in glob.glob("*.mp4"):
-    # organize the ending videos
-    if fnmatch.fnmatch(mp4FileName, "*_win*") or fnmatch.fnmatch(mp4FileName, "*_lose*"):
-        subprocess.call(["mv", mp4FileName, "_endings/"])
-        continue
-    # if this is not an ending video then it's an encoding
-    # save a dictionary of the mp4FileNames keyed by the folderName
-    folderName = mp4FileName.split("-")[1].split(".")[0]
-    fileNameDict[folderName] = mp4FileName
+mp4Glob = glob.glob("*.mp4")
+if mp4Glob:
+    for mp4FileName in mp4Glob:
+        # organize the ending videos
+        if fnmatch.fnmatch(mp4FileName, "*_win*") or fnmatch.fnmatch(mp4FileName, "*_lose*"):
+            # if os.path.exists("_endings") is False:
+            #     subprocess.call(["mkdir", "_endings"])
+            # subprocess.call(["mv", mp4FileName, "_endings/"])
+            continue
+        # if this is not an ending video then it's an encoding
+        # save a dictionary of the mp4FileNames keyed by the folderName
+        folderName = mp4FileName.split("-")[1].split(".")[0]
+        fileNameDict[folderName] = mp4FileName
+else:
+    sys.exit("ERROR: No mp4 files to segment!")
 
 # there should be a .m4a file for the audio only stream
 for m4aFileName in glob.glob("*.m4a"):
     folderName = m4aFileName.split("-")[1].split(".")[0]
     fileNameDict[folderName] = m4aFileName
+
+if os.path.exists("_streams") is False:
+    subprocess.call(["mkdir", "_streams"])
 
 # iterate through the dictonary to stream and stamp
 for folderName, fileName in fileNameDict.iteritems():
@@ -176,9 +187,9 @@ for folderName, fileName in fileNameDict.iteritems():
     subprocess.call(["mkdir", "_streams/" + folderName])
 
     if fnmatch.fnmatch(folderName, "*_audio"):
-        subprocess.call(["mediafilesegmenter", "-audio-only", "-I", "-B", gStreamTitle + "_", "-f", "_streams/" + folderName, "-M", gMacrofile, fileName])
+        subprocess.call(["mediafilesegmenter", "-t", "5", "-audio-only", "-I", "-B", gStreamTitle + "_", "-f", "_streams/" + folderName, "-M", gMacrofile, fileName])
     else:
-        subprocess.call(["mediafilesegmenter", "-I", "-B", gStreamTitle + "_", "-f", "_streams/" + folderName, "-M", gMacrofile, fileName])
+        subprocess.call(["mediafilesegmenter", "-t", "5", "-I", "-B", gStreamTitle + "_", "-f", "_streams/" + folderName, "-M", gMacrofile, fileName])
 
 # create a dictionary for the plist files keyed by folder destination
 plistFileNameDict = {}
@@ -191,7 +202,8 @@ for plistFileName in glob.glob("*.plist"):
 # this subprocess should be generated more dynamically
 # we just need to consider which stream is first in the
 # all.m3u8 file since that will be the first stream to load
-subprocess.call(["variantplaylistcreator", "-o", "_streams/all.m3u8", "400/prog_index.m3u8", plistFileNameDict['400'], "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"], "64_video/prog_index.m3u8", plistFileNameDict["64_video"], "100/prog_index.m3u8", plistFileNameDict["100"], "200/prog_index.m3u8", plistFileNameDict["200"], "600/prog_index.m3u8", plistFileNameDict["600"], "1200/prog_index.m3u8", plistFileNameDict["1200"]])
+subprocess.call(["variantplaylistcreator", "-o", "_streams/standard.m3u8", "400/prog_index.m3u8", plistFileNameDict['400'], "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"], "64_video/prog_index.m3u8", plistFileNameDict["64_video"], "100/prog_index.m3u8", plistFileNameDict["100"], "200/prog_index.m3u8", plistFileNameDict["200"], "600/prog_index.m3u8", plistFileNameDict["600"]])
+subprocess.call(["variantplaylistcreator", "-o", "_streams/premium.m3u8", "400/prog_index.m3u8", plistFileNameDict['400'], "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"], "64_video/prog_index.m3u8", plistFileNameDict["64_video"], "100/prog_index.m3u8", plistFileNameDict["100"], "200/prog_index.m3u8", plistFileNameDict["200"], "600/prog_index.m3u8", plistFileNameDict["600"], "1200/prog_index.m3u8", plistFileNameDict["1200"]])
 
 # clean up
 for plistFileName in glob.glob("*.plist"):
