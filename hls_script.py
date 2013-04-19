@@ -117,12 +117,13 @@ count = 0
 # go through each line
 for lyne in fyle:
     txt_elements = lyne.split()
-    #if there are less than 5 elements it's probably a blank line (or something else is up)
+    # if there are less than 5 elements it's probably a blank line (or something else is up)
+    # a rudimentary validation but works for now
     if len(txt_elements) < 5:
         continue
 
-    time_code = txt_elements[4]
-    id3_file = assignFileName(txt_elements[6])
+    time_code = txt_elements[-3]
+    id3_file = assignFileName(txt_elements[-1])
 
     if id3_file == "none":
         continue
@@ -204,6 +205,7 @@ for plistFileName in glob.glob("*.plist"):
 # all.m3u8 file since that will be the first stream to load
 subprocess.call(["variantplaylistcreator", "-o", "_streams/standard.m3u8", "400/prog_index.m3u8", plistFileNameDict['400'], "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"], "64_video/prog_index.m3u8", plistFileNameDict["64_video"], "100/prog_index.m3u8", plistFileNameDict["100"], "200/prog_index.m3u8", plistFileNameDict["200"], "600/prog_index.m3u8", plistFileNameDict["600"]])
 subprocess.call(["variantplaylistcreator", "-o", "_streams/premium.m3u8", "400/prog_index.m3u8", plistFileNameDict['400'], "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"], "64_video/prog_index.m3u8", plistFileNameDict["64_video"], "100/prog_index.m3u8", plistFileNameDict["100"], "200/prog_index.m3u8", plistFileNameDict["200"], "600/prog_index.m3u8", plistFileNameDict["600"], "1200/prog_index.m3u8", plistFileNameDict["1200"]])
+subprocess.call(["variantplaylistcreator", "-o", "_streams/phone.m3u8", "200/prog_index.m3u8", plistFileNameDict["200"], "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"], "64_video/prog_index.m3u8", plistFileNameDict["64_video"], "100/prog_index.m3u8", plistFileNameDict["100"], "400/prog_index.m3u8", plistFileNameDict['400']])
 
 # clean up
 for plistFileName in glob.glob("*.plist"):
