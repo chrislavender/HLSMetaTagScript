@@ -32,7 +32,7 @@ import glob
 import fnmatch
 import os
 
-gID3TagsLocation = "/Users/chrislavender/bin/meta_tags/"
+gID3TagsLocation = "/Users/Chris/bin/meta_tags/"
 gInputFile = ""
 gStreamTitle = ""
 gMacrofile = "macrofile.txt"
@@ -204,6 +204,7 @@ for plistFileName in glob.glob("*.plist"):
 # all.m3u8 file since that will be the first stream to load
 subprocess.call(["variantplaylistcreator", "-o", "_streams/standard.m3u8", "400/prog_index.m3u8", plistFileNameDict['400'], "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"], "64_video/prog_index.m3u8", plistFileNameDict["64_video"], "100/prog_index.m3u8", plistFileNameDict["100"], "200/prog_index.m3u8", plistFileNameDict["200"], "600/prog_index.m3u8", plistFileNameDict["600"]])
 subprocess.call(["variantplaylistcreator", "-o", "_streams/premium.m3u8", "400/prog_index.m3u8", plistFileNameDict['400'], "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"], "64_video/prog_index.m3u8", plistFileNameDict["64_video"], "100/prog_index.m3u8", plistFileNameDict["100"], "200/prog_index.m3u8", plistFileNameDict["200"], "600/prog_index.m3u8", plistFileNameDict["600"], "1200/prog_index.m3u8", plistFileNameDict["1200"]])
+subprocess.call(["variantplaylistcreator", "-o", "_streams/phone.m3u8", "200/prog_index.m3u8", plistFileNameDict["200"], "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"], "64_video/prog_index.m3u8", plistFileNameDict["64_video"], "100/prog_index.m3u8", plistFileNameDict["100"], "400/prog_index.m3u8", plistFileNameDict['400']])
 
 # clean up
 for plistFileName in glob.glob("*.plist"):
