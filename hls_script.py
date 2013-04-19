@@ -32,7 +32,7 @@ import glob
 import fnmatch
 import os
 
-gID3TagsLocation = "/Users/Chris/bin/meta_tags/"
+gID3TagsLocation = "~/bin/meta_tags/"
 gInputFile = ""
 gStreamTitle = ""
 gMacrofile = "macrofile.txt"
