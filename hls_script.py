@@ -117,12 +117,13 @@ count = 0
 # go through each line
 for lyne in fyle:
     txt_elements = lyne.split()
-    #if there are less than 5 elements it's probably a blank line (or something else is up)
+    # if there are less than 5 elements it's probably a blank line (or something else is up)
+    # a rudimentary validation but works for now
     if len(txt_elements) < 5:
         continue
 
-    time_code = txt_elements[4]
-    id3_file = assignFileName(txt_elements[6])
+    time_code = txt_elements[-3]
+    id3_file = assignFileName(txt_elements[-1])
 
     if id3_file == "none":
         continue
