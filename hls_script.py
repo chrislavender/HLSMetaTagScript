@@ -7,10 +7,13 @@
 # Currently these assumptions are made:
 # a) you have Apple's HLS command line tools installed
 # b) you have created 7 id3 tags (future: dynamically determine)
-# c) the tags are located in a folder called "meta_tags" (future: dynamically create id3 tags and destroy when finished)
-# d) the meta_tags folder location is set correctly via the gID3TagsLocation variable (future: will be unneeded)
-# e) the .txt file with the FCP markers is located in the same directory as 7 .mp4 encodings
-#		generated from Compressor with this title structure: aTitle-encoding.mp4
+# c) the tags are located in a folder called "meta_tags"
+#       (future: dynamically create id3 tags and destroy when finished)
+# d) the meta_tags directory is set correctly via the gID3TagsLocation variable
+#        (future: will be unneeded)
+# e) the .txt file with the FCP markers is located in the same
+#		directory as 7 .mp4 encodings generated from Compressor
+#       with this title structure: aTitle-encoding.mp4
 #	1) title-64_audio.m4a
 #	2) title-64_video.mp4
 #	3) title-100.mp4
@@ -18,10 +21,12 @@
 #	5) title-400.mp4
 #	6) title-600.mp4
 #	7) title-1200.mp4
-# f) the markers from FCP correspond to the colors in the assignFileName function. (future: dynamically determine)
+# f) the markers from FCP correspond to the colors in the assignFileName
+#       function. (future: dynamically determine)
 
 # this script should be run from inside the folder where the assets are
-# you can either put this script in that folder OR add the script to your bash $PATH
+# you can either put this script in that folder OR
+#                   add the script to your bash $PATH
 
 #flag for proper handling of division
 from __future__ import division
@@ -32,7 +37,7 @@ import glob
 import fnmatch
 import os
 
-gID3TagsLocation = "~/bin/meta_tags/"
+gID3TagsLocation = "/Users/Chris/bin/meta_tags/"
 gInputFile = ""
 gStreamTitle = ""
 gMacrofile = "macrofile.txt"
@@ -47,7 +52,10 @@ def convertTimeCodeStringToFloat(tc_string):
     timeAsFloat = 0.0
     tc_elements = tc_string.split(":", 4)
 
-    sys.stdout.write("time code = " + tc_elements[1] + " : " + tc_elements[2] + " : " + tc_elements[3] + "\n")
+    sys.stdout.write("time code = "
+                     + tc_elements[1] + " : "
+                     + tc_elements[2] + " : "
+                     + tc_elements[3] + "\n")
 
     i = 1
 
@@ -108,7 +116,8 @@ fout_starts = open(gStartsOutputFile + ".txt", "w")
 for num in range(1, 11):
     # print value, key
     floatString = str(num)
-    fout_markers.write(floatString + " id3 " + gID3TagsLocation + "0.id3" + "\n")
+    fout_markers.write(floatString + " id3 "
+                       + gID3TagsLocation + "0.id3" + "\n")
 
 fyle = open(gInputFile)
 
@@ -117,7 +126,8 @@ count = 0
 # go through each line
 for lyne in fyle:
     txt_elements = lyne.split()
-    # if there are less than 5 elements it's probably a blank line (or something else is up)
+    # if there are less than 5 elements it's probably
+    # a blank line (or something else is up)
     # a rudimentary validation but works for now
     if len(txt_elements) < 5:
         continue
@@ -137,7 +147,8 @@ for lyne in fyle:
 
     # print to the file
     floatString = str(time)
-    fout_markers.write(floatString + " id3 " + gID3TagsLocation + id3_file + "\n")
+    fout_markers.write(floatString + " id3 "
+                       + gID3TagsLocation + id3_file + "\n")
 
     if id3_file == "1.id3":
         count += 1
@@ -162,7 +173,9 @@ mp4Glob = glob.glob("*.mp4")
 if mp4Glob:
     for mp4FileName in mp4Glob:
         # organize the ending videos
-        if fnmatch.fnmatch(mp4FileName, "*_win*") or fnmatch.fnmatch(mp4FileName, "*_lose*"):
+        if fnmatch.fnmatch(mp4FileName,
+                           "*_win*") or fnmatch.fnmatch(mp4FileName,
+                                                        "*_lose*"):
             # if os.path.exists("_endings") is False:
             #     subprocess.call(["mkdir", "_endings"])
             # subprocess.call(["mv", mp4FileName, "_endings/"])
@@ -188,9 +201,20 @@ for folderName, fileName in fileNameDict.iteritems():
     subprocess.call(["mkdir", "_streams/" + folderName])
 
     if fnmatch.fnmatch(folderName, "*_audio"):
-        subprocess.call(["mediafilesegmenter", "-t", "5", "-audio-only", "-I", "-B", gStreamTitle + "_", "-f", "_streams/" + folderName, "-M", gMacrofile, fileName])
+        subprocess.call(["mediafilesegmenter",
+                        "-t", "5",
+                        "-audio-only",
+                        "-I", "-B", gStreamTitle + "_",
+                        "-f", "_streams/" + folderName,
+                        "-M", gMacrofile,
+                        fileName])
     else:
-        subprocess.call(["mediafilesegmenter", "-t", "5", "-I", "-B", gStreamTitle + "_", "-f", "_streams/" + folderName, "-M", gMacrofile, fileName])
+        subprocess.call(["mediafilesegmenter",
+                        "-t", "5",
+                        "-I", "-B", gStreamTitle + "_",
+                        "-f", "_streams/" + folderName,
+                        "-M", gMacrofile,
+                        fileName])
 
 # create a dictionary for the plist files keyed by folder destination
 plistFileNameDict = {}
@@ -203,9 +227,32 @@ for plistFileName in glob.glob("*.plist"):
 # this subprocess should be generated more dynamically
 # we just need to consider which stream is first in the
 # all.m3u8 file since that will be the first stream to load
-subprocess.call(["variantplaylistcreator", "-o", "_streams/standard.m3u8", "400/prog_index.m3u8", plistFileNameDict['400'], "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"], "64_video/prog_index.m3u8", plistFileNameDict["64_video"], "100/prog_index.m3u8", plistFileNameDict["100"], "200/prog_index.m3u8", plistFileNameDict["200"], "600/prog_index.m3u8", plistFileNameDict["600"]])
-subprocess.call(["variantplaylistcreator", "-o", "_streams/premium.m3u8", "400/prog_index.m3u8", plistFileNameDict['400'], "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"], "64_video/prog_index.m3u8", plistFileNameDict["64_video"], "100/prog_index.m3u8", plistFileNameDict["100"], "200/prog_index.m3u8", plistFileNameDict["200"], "600/prog_index.m3u8", plistFileNameDict["600"], "1200/prog_index.m3u8", plistFileNameDict["1200"]])
-subprocess.call(["variantplaylistcreator", "-o", "_streams/phone.m3u8", "200/prog_index.m3u8", plistFileNameDict["200"], "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"], "64_video/prog_index.m3u8", plistFileNameDict["64_video"], "100/prog_index.m3u8", plistFileNameDict["100"], "400/prog_index.m3u8", plistFileNameDict['400']])
+subprocess.call(["variantplaylistcreator",
+                "-o", "_streams/standard.m3u8",
+                "400/prog_index.m3u8", plistFileNameDict['400'],
+                "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"],
+                "64_video/prog_index.m3u8", plistFileNameDict["64_video"],
+                "100/prog_index.m3u8", plistFileNameDict["100"],
+                "200/prog_index.m3u8", plistFileNameDict["200"],
+                "600/prog_index.m3u8", plistFileNameDict["600"]])
+
+subprocess.call(["variantplaylistcreator",
+                "-o", "_streams/premium.m3u8",
+                "400/prog_index.m3u8", plistFileNameDict['400'],
+                "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"],
+                "64_video/prog_index.m3u8", plistFileNameDict["64_video"],
+                "100/prog_index.m3u8", plistFileNameDict["100"],
+                "200/prog_index.m3u8", plistFileNameDict["200"],
+                "600/prog_index.m3u8", plistFileNameDict["600"],
+                "1200/prog_index.m3u8", plistFileNameDict["1200"]])
+
+subprocess.call(["variantplaylistcreator",
+                "-o", "_streams/phone.m3u8",
+                "200/prog_index.m3u8", plistFileNameDict["200"],
+                "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"],
+                "64_video/prog_index.m3u8", plistFileNameDict["64_video"],
+                "100/prog_index.m3u8", plistFileNameDict["100"],
+                "400/prog_index.m3u8", plistFileNameDict['400']])
 
 # clean up
 for plistFileName in glob.glob("*.plist"):
