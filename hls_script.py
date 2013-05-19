@@ -2,31 +2,26 @@
 
 # This is to convert time code markers from a .txt file generated from FCP.
 # It is currently set up for one use case, but is evolving to be able to
-# dynamically do all steps on the fly.
+# dynamically do all steps on the fly
 
 # Currently these assumptions are made:
 # a) you have Apple's HLS command line tools installed
-# b) you have created 7 id3 tags (future: dynamically determine)
-# c) the tags are located in a folder called "meta_tags"
-#       (future: dynamically create id3 tags and destroy when finished)
-# d) the meta_tags directory is set correctly via the gID3TagsLocation variable
-#        (future: will be unneeded)
-# e) the .txt file with the FCP markers is located in the same
+# b) the app requires 6 id3 tags (future: dynamically determine)
+# c) the .txt file with the FCP markers is located in the same
 #		directory as 7 .mp4 encodings generated from Compressor
-#       with this title structure: aTitle-encoding.mp4
-#	1) title-64_audio.m4a
-#	2) title-64_video.mp4
-#	3) title-100.mp4
-#	4) title-200.mp4
-#	5) title-400.mp4
-#	6) title-600.mp4
-#	7) title-1200.mp4
-# f) the markers from FCP correspond to the colors in the assignFileName
+# d) the markers from FCP correspond to the colors in the assignFileName
 #       function. (future: dynamically determine)
 
-# this script should be run from inside the folder where the assets are
+# this script should be run from inside the folder where the assets are located
 # you can either put this script in that folder OR
 #                   add the script to your bash $PATH
+
+
+############################################################################
+## FORMAT FOR RUNNING
+#
+## hls_script.py <path to markers.txt file> <optional prefix for .ts files>
+#############################################################################
 
 #flag for proper handling of division
 from __future__ import division
@@ -36,8 +31,8 @@ import subprocess
 import glob
 import fnmatch
 import os
+import re
 
-gID3TagsLocation = "/Users/Chris/bin/meta_tags/"
 gInputFile = ""
 gStreamTitle = ""
 gMacrofile = "macrofile.txt"
@@ -72,6 +67,7 @@ def convertTimeCodeStringToFloat(tc_string):
 
 
 def assignFileName(tag_name):
+# these are Braindex specific
 # FCP outputs the markers with a color associated
 
     if tag_name == "Red":
@@ -81,15 +77,50 @@ def assignFileName(tag_name):
     elif tag_name == "Yellow":
         fileName = "3.id3"
     elif tag_name == "Green":
-        fileName = "5.id3"
+        fileName = "4.id3"
     elif tag_name == "Turquoise":
-        fileName = "6.id3"
+        fileName = "5.id3"
     elif tag_name == "Blue":
-        fileName = "7.id3"
+        fileName = "6.id3"
     else:
         fileName = "none"
 
     return fileName
+
+
+def metaTagText(fileName):
+# these are Braindex specific
+
+    if fileName == "1.id3":
+        tagText = "setup"
+    elif fileName == "2.id3":
+        tagText = "question"
+    elif fileName == "3.id3":
+        tagText = "possible_answers"
+    elif fileName == "4.id3":
+        tagText = "contestant_answer"
+    elif fileName == "5.id3":
+        tagText = "correct_answer"
+    elif fileName == "6.id3":
+        tagText = "reset"
+    else:
+        tagText = "error too many tags"
+
+    return tagText
+
+
+def atoi(text):
+    return int(text) if text.isdigit() else text
+
+
+def natural_keys(text):
+    # '''
+    # alist.sort(key=natural_keys) sorts in human order
+    # http://nedbatchelder.com/blog/200712/human_sorting.html
+    # (See Toothy's implementation in the comments)
+    # '''
+    return [atoi(c) for c in re.split('(\d+)', text)]
+
 
 # check for an input file argument
 if (len(sys.argv) > 1):
@@ -113,11 +144,11 @@ fout_markers = open(gMacrofile, "w")
 fout_starts = open(gStartsOutputFile + ".txt", "w")
 
 # next add the init tags
+subprocess.call(["id3taggenerator", "-o", "0.id3", "-text", "init"])
 for num in range(1, 11):
     # print value, key
     floatString = str(num)
-    fout_markers.write(floatString + " id3 "
-                       + gID3TagsLocation + "0.id3" + "\n")
+    fout_markers.write(floatString + " id3 " + "0.id3" + "\n")
 
 fyle = open(gInputFile)
 
@@ -133,24 +164,27 @@ for lyne in fyle:
         continue
 
     time_code = txt_elements[-3]
-    id3_file = assignFileName(txt_elements[-1])
+    id3_fileName = assignFileName(txt_elements[-1])
 
-    if id3_file == "none":
+    if id3_fileName == "none":
         continue
+
+    tag_text = metaTagText(id3_fileName)
+
+    subprocess.call(["id3taggenerator", "-o", id3_fileName, "-text", tag_text])
 
     #convert to a float
     time = convertTimeCodeStringToFloat(time_code)
     # possible answers are animated on the screen so
     # subtract animation time from the presentation time
-    if id3_file == "3.id3":
+    if id3_fileName == "3.id3":
         time = time - gAnswerAnimationTime
 
     # print to the file
     floatString = str(time)
-    fout_markers.write(floatString + " id3 "
-                       + gID3TagsLocation + id3_file + "\n")
+    fout_markers.write(floatString + " id3 " + id3_fileName + "\n")
 
-    if id3_file == "1.id3":
+    if id3_fileName == "1.id3":
         count += 1
         fout_starts.write("Q" + str(count) + " " + floatString + "\n")
 
@@ -180,10 +214,15 @@ if mp4Glob:
             #     subprocess.call(["mkdir", "_endings"])
             # subprocess.call(["mv", mp4FileName, "_endings/"])
             continue
-        # if this is not an ending video then it's an encoding
-        # save a dictionary of the mp4FileNames keyed by the folderName
-        folderName = mp4FileName.split("-")[1].split(".")[0]
-        fileNameDict[folderName] = mp4FileName
+
+        # currently we are not processing the highest bit rate stream
+        # this should be an optional argument or something
+        elif not fnmatch.fnmatch(mp4FileName, "*1200*"):
+            # if this is not an ending video then it's an encoding
+            # save a dictionary of the mp4FileNames keyed by the folderName
+            folderName = mp4FileName.split("-")[1].split(".")[0]
+            fileNameDict[folderName] = mp4FileName
+
 else:
     sys.exit("ERROR: No mp4 files to segment!")
 
@@ -192,8 +231,10 @@ for m4aFileName in glob.glob("*.m4a"):
     folderName = m4aFileName.split("-")[1].split(".")[0]
     fileNameDict[folderName] = m4aFileName
 
-if os.path.exists("_streams") is False:
-    subprocess.call(["mkdir", "_streams"])
+if os.path.exists("_streams") is True:
+    subprocess.call(["rm", "-r", "_streams"])
+    
+subprocess.call(["mkdir", "_streams"])
 
 # iterate through the dictonary to stream and stamp
 for folderName, fileName in fileNameDict.iteritems():
@@ -208,7 +249,9 @@ for folderName, fileName in fileNameDict.iteritems():
                         "-f", "_streams/" + folderName,
                         "-M", gMacrofile,
                         fileName])
-    else:
+    # currently we are not processing the highest bit rate stream
+    # this should be an optional argument or something
+    elif not fnmatch.fnmatch(folderName, "*1200*"):
         subprocess.call(["mediafilesegmenter",
                         "-t", "5",
                         "-I", "-B", gStreamTitle + "_",
@@ -224,36 +267,44 @@ for plistFileName in glob.glob("*.plist"):
     folderName = plistFileName.split("-")[1].split(".")[0]
     plistFileNameDict[folderName] = plistFileName
 
-# this subprocess should be generated more dynamically
-# we just need to consider which stream is first in the
-# all.m3u8 file since that will be the first stream to load
-subprocess.call(["variantplaylistcreator",
-                "-o", "_streams/standard.m3u8",
-                "400/prog_index.m3u8", plistFileNameDict['400'],
-                "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"],
-                "64_video/prog_index.m3u8", plistFileNameDict["64_video"],
-                "100/prog_index.m3u8", plistFileNameDict["100"],
-                "200/prog_index.m3u8", plistFileNameDict["200"],
-                "600/prog_index.m3u8", plistFileNameDict["600"]])
+# grab the file names
+fileNameList = list(fileNameDict.keys())
 
-subprocess.call(["variantplaylistcreator",
-                "-o", "_streams/premium.m3u8",
-                "400/prog_index.m3u8", plistFileNameDict['400'],
-                "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"],
-                "64_video/prog_index.m3u8", plistFileNameDict["64_video"],
-                "100/prog_index.m3u8", plistFileNameDict["100"],
-                "200/prog_index.m3u8", plistFileNameDict["200"],
-                "600/prog_index.m3u8", plistFileNameDict["600"],
-                "1200/prog_index.m3u8", plistFileNameDict["1200"]])
+# perform a "human sort"
+# http://stackoverflow.com/questions/5967500/how-to-correctly-sort-string-with-number-inside
+sortedFileNameList = sorted(fileNameList, key=natural_keys)
 
-subprocess.call(["variantplaylistcreator",
-                "-o", "_streams/phone.m3u8",
-                "200/prog_index.m3u8", plistFileNameDict["200"],
-                "64_audio/prog_index.m3u8", plistFileNameDict["64_audio"],
-                "64_video/prog_index.m3u8", plistFileNameDict["64_video"],
-                "100/prog_index.m3u8", plistFileNameDict["100"],
-                "400/prog_index.m3u8", plistFileNameDict['400']])
+# we need to consider which stream is first in the
+# top level .m3u8 file since that will be the first stream to load
+# fix the order of the variant play list
+
+## Standard Stream
+standardVariantListOrder = [4, 0, 1, 2, 3, 5]
+variantCommandStringList = ["variantplaylistcreator", "-o", "_streams/standard.m3u8"]
+for item in [sortedFileNameList[i] for i in standardVariantListOrder]:
+    variantCommandStringList.append(item + "/prog_index.m3u8")
+    variantCommandStringList.append(plistFileNameDict[item])
+subprocess.call(variantCommandStringList)
+
+## Phone Stream
+phoneVariantListOrder = [3, 0, 1, 2, 4, 5]
+variantCommandStringList = ["variantplaylistcreator", "-o", "_streams/phone.m3u8"]
+for item in [sortedFileNameList[i] for i in phoneVariantListOrder]:
+    variantCommandStringList.append(item + "/prog_index.m3u8")
+    variantCommandStringList.append(plistFileNameDict[item])
+subprocess.call(variantCommandStringList)
+
+## Premium Stream
+# premiumVariantListOrder = [4, 0, 1, 2, 3, 5, 6]
+# variantCommandStringList = ["variantplaylistcreator", "-o", "_streams/premium.m3u8"]
+# for item in [sortedFileNameList[i] for i in premiumVariantListOrder]:
+#     variantCommandStringList.append(item + "/prog_index.m3u8")
+#     variantCommandStringList.append(plistFileNameDict[item])
+# subprocess.call(variantCommandStringList)
 
 # clean up
 for plistFileName in glob.glob("*.plist"):
     subprocess.call(["rm", plistFileName])
+
+for id3FileList in glob.glob("*.id3"):
+    subprocess.call(["rm", id3FileList])
