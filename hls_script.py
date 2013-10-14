@@ -12,8 +12,8 @@
 # d) the markers from FCP correspond to the colors in the assignFileName
 #       function. (future: dynamically determine)
 
-# this script should be run from inside the folder where the assets are located
-# you can either put this script in that folder OR
+# this script should be run from inside the directory where the assets are located
+# you can either put this script in that directory OR
 #                   add the script to your bash $PATH
 
 
