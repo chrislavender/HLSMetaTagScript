@@ -9,5 +9,5 @@ Problem #2 (hls_s3upload.py)
 Then I need a way to upload all those files to an Amazon s3 bucket.
 
 
-The solution was to write these two Python scripts. If you are using HLS and doing your own encoding and segmenting, this could come in handy.
+If you are using HLS and doing your own encoding and segmenting, this could come in handy.
 Shoot me a message and let's talk about making it more generic.
